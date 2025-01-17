@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 import argparse
 import time
 import platform
 import subprocess
+import sys
 
 
 class NOSLEEP:
@@ -44,18 +47,38 @@ class NOSLEEP:
             print(f"won't sleep for {min_req} minutes")
             print("ctrl+c to exit early")
             
-            time.sleep(min_req * 60)
+            # time.sleep(min_req * 60) # not a pleasant KeyboardInterrupt hence the following
+            finish = time.time() + (min_req * 60)
+            try:
+                while time.time() < finish:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                self.cleanup()
+                print("\nmake sure its done else rerun")
+                sys.exit(0)
             
-        except KeyboardInterrupt:
+        except Exception as e:
+            self.cleanup()
             print("\nmake sure its done else rerun")
+            sys.exit(0)
         finally:
             self.cleanup()
+            sys.exit(0)
     
-    def cleanup(self):
-        if self.process:
-            self.process.terminate()
-            self.process.wait()
-        print("sleep prevention deactivated")
+    def cleanup(self): # sorry for the nest
+        try:
+            if self.process:
+                try:
+                    self.process.terminate()
+                    self.process.wait(timeout=1)
+                except:
+                    try:
+                        self.process.kill()
+                    except:
+                        pass
+            print("sleep prevention deactivated")
+        except:
+            pass
 
 def main():
     parser = argparse.ArgumentParser()
